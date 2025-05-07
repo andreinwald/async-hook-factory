@@ -1,42 +1,40 @@
-import {useEffect, useState} from 'react';
+import {useCallback, useEffect, useRef, useState} from 'react';
 
 export function asyncHookFactory<Result, Params extends unknown[]>(asyncFunction: (...params: Params) => Promise<Result>) {
     return (...params: Params) => {
         const [result, setResult] = useState<Result>();
-        const [error, setError] = useState<Error | false>(false);
+        const [error, setError] = useState<Error | null>(null);
         const [loading, setLoading] = useState(true);
-        let aborted = false;
+        const abortedRef = useRef(false);
 
-        function execute() {
+        const execute = useCallback(() => {
             setLoading(true);
-            setError(false);
+            setError(null);
             asyncFunction(...params)
-                .then((resultData: Result) => {
-                    if (aborted) {
-                        return;
-                    }
-                    setError(false);
+                .then((resultData) => {
+                    if (abortedRef.current) return;
                     setResult(resultData);
-                    setLoading(false);
+                    setError(null);
                 })
                 .catch((error_) => {
-                    if (aborted) {
-                        return;
-                    }
+                    if (abortedRef.current) return;
                     setError(error_);
                     setResult(undefined);
-                    setLoading(false);
+                })
+                .finally(() => {
+                    if (!abortedRef.current) setLoading(false);
                 });
-        }
-
-        useEffect(() => {
-            execute();
-            return (): void => {
-                aborted = true;
-            };
         }, [...params]);
 
-        return {result, error, loading, refresh: execute};
+        useEffect(() => {
+            abortedRef.current = false;
+            execute();
+            return () => {
+                abortedRef.current = true;
+            };
+        }, [execute]);
+
+        return {result, error, loading, retry: execute};
     };
 }
 

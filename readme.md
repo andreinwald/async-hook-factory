@@ -20,7 +20,7 @@ export const useProductQuery = asyncHookFactory(async (productId) => {
 ```javascript
 export function MyPage() {
     const productId = 22;
-    const {result, error, loading, refresh} = useProductQuery(productId);
+    const {result, error, loading, retry} = useProductQuery(productId);
     return <div>Product: {result}</div>
 }
 ```
