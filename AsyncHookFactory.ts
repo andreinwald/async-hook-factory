@@ -39,3 +39,32 @@ export function asyncHookFactory<Result, Params extends unknown[]>(asyncFunction
         return {result, error, loading, refresh: execute};
     };
 }
+
+export function cacheFunction<Result, Params extends unknown[]>(asyncFunction: (...params: Params) => Promise<Result>, cacheSeconds: number) {
+    let cachedResults = {};
+    let cachedPromises = {};
+    return async (...params: Params): Promise<Result> => {
+        let cacheKey = JSON.stringify(params);
+        let stored = cachedResults[cacheKey];
+        if (stored) {
+            if (stored.expires > Date.now()) {
+                return stored.result;
+            }
+            delete cachedResults[cacheKey];
+        }
+        if (cachedPromises[cacheKey]) {
+            return cachedPromises[cacheKey];
+        }
+        cachedPromises[cacheKey] = asyncFunction(...params);
+        try {
+            let result = await cachedPromises[cacheKey];
+            cachedResults[cacheKey] = {result, expires: Date.now() + cacheSeconds * 1000};
+            return result;
+        } catch (error) {
+            delete cachedResults[cacheKey];
+            throw error;
+        } finally {
+            delete cachedPromises[cacheKey];
+        }
+    }
+}
