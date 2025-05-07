@@ -56,12 +56,12 @@ export function cacheFunction<Result, Params extends unknown[]>(asyncFunction: (
             return cachedPromises[cacheKey];
         }
         cachedPromises[cacheKey] = asyncFunction(...params);
-        delete cachedResults[cacheKey];
         try {
             let result = await cachedPromises[cacheKey];
             cachedResults[cacheKey] = {result, expires: Date.now() + cacheSeconds * 1000};
             return result;
         } catch (error) {
+            delete cachedResults[cacheKey];
             throw error;
         } finally {
             delete cachedPromises[cacheKey];
