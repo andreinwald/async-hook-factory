@@ -2,7 +2,10 @@
   "name": "async-hook-factory",
   "version": "1.0.0",
   "license": "MIT",
+  "type": "module",
   "devDependencies": {
-    "@types/react": "^19.1.2"
+    "@types/react": "^19.1.2",
+    "react": "^19.1.0",
+    "vitest": "^3.1.3"
   }
 }
