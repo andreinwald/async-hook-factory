@@ -7,23 +7,24 @@ export function asyncHookFactory<Result, Params extends unknown[]>(asyncFunction
         const [loading, setLoading] = useState(true);
         const abortedRef = useRef(false);
 
-        const execute = useCallback(() => {
+        const execute = useCallback(async () => {
+            if (abortedRef.current) return;
             setLoading(true);
             setError(null);
-            asyncFunction(...params)
-                .then((resultData) => {
-                    if (abortedRef.current) return;
-                    setResult(resultData);
-                    setError(null);
-                })
-                .catch((error_) => {
-                    if (abortedRef.current) return;
-                    setError(error_);
-                    setResult(undefined);
-                })
-                .finally(() => {
-                    if (!abortedRef.current) setLoading(false);
-                });
+            try {
+                const resultData = await asyncFunction(...params);
+                if (abortedRef.current) return;
+                setResult(resultData);
+                setError(null);
+            } catch (error_) {
+                if (abortedRef.current) return;
+                setError(error_);
+                setResult(undefined);
+            } finally {
+                if (!abortedRef.current) {
+                    setLoading(false);
+                }
+            }
         }, [...params]);
 
         useEffect(() => {
