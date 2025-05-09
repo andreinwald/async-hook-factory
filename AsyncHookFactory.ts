@@ -18,7 +18,7 @@ export function asyncHookFactory<Result, Params extends unknown[]>(asyncFunction
                 setError(null);
             } catch (error_) {
                 if (abortedRef.current) return;
-                setError(error_);
+                setError(error_ as Error);
                 setResult(undefined);
             } finally {
                 if (!abortedRef.current) {
@@ -40,8 +40,8 @@ export function asyncHookFactory<Result, Params extends unknown[]>(asyncFunction
 }
 
 export function cacheFunction<Result, Params extends unknown[]>(asyncFunction: (...params: Params) => Promise<Result>, cacheSeconds: number) {
-    let cachedResults = {};
-    let cachedPromises = {};
+    let cachedResults: { [key: string]: { result: Result, expires: number } } = {};
+    let cachedPromises: { [key: string]: Promise<Result> } = {};
     return async (...params: Params): Promise<Result> => {
         let cacheKey = JSON.stringify(params);
         let stored = cachedResults[cacheKey];
@@ -51,7 +51,7 @@ export function cacheFunction<Result, Params extends unknown[]>(asyncFunction: (
             }
             delete cachedResults[cacheKey];
         }
-        if (cachedPromises[cacheKey]) {
+        if (cacheKey in cachedPromises) {
             return cachedPromises[cacheKey];
         }
         cachedPromises[cacheKey] = asyncFunction(...params);
