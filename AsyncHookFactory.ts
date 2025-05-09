@@ -39,11 +39,16 @@ export function asyncHookFactory<Result, Params extends unknown[]>(asyncFunction
     };
 }
 
-export function cacheFunction<Result, Params extends unknown[]>(asyncFunction: (...params: Params) => Promise<Result>, cacheSeconds: number) {
+type CacheOptions<Params extends unknown[]> = {
+    seconds: number,
+    customKey?: (...params: Params) => string,
+}
+
+export function cacheFunction<Result, Params extends unknown[]>(asyncFunction: (...params: Params) => Promise<Result>, options: CacheOptions<Params>) {
     let cachedResults: { [key: string]: { result: Result, expires: number } } = {};
     let cachedPromises: { [key: string]: Promise<Result> } = {};
     return async (...params: Params): Promise<Result> => {
-        let cacheKey = JSON.stringify(params);
+        let cacheKey = options.customKey ? options.customKey(...params) : JSON.stringify(params);
         let stored = cachedResults[cacheKey];
         if (stored) {
             if (stored.expires > Date.now()) {
@@ -57,7 +62,7 @@ export function cacheFunction<Result, Params extends unknown[]>(asyncFunction: (
         cachedPromises[cacheKey] = asyncFunction(...params);
         try {
             let result = await cachedPromises[cacheKey];
-            cachedResults[cacheKey] = {result, expires: Date.now() + cacheSeconds * 1000};
+            cachedResults[cacheKey] = {result, expires: Date.now() + options.seconds * 1000};
             return result;
         } catch (error) {
             delete cachedResults[cacheKey];
