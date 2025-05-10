@@ -41,3 +41,5 @@ export const useProductQuery = asyncHookFactory(cacheFunction((productId) => you
 ```
 
 
+# Alternatives
+- [React query](https://tanstack.com/query)
