@@ -73,3 +73,25 @@ test('sync error', async () => {
     // Result should be undefined
     expect(result.current.result).toBe(undefined);
 });
+
+test('second request finished before first', async () => {
+    let resolvers = {};
+    let calls = 0;
+    const mockAsyncFn = vi.fn(() => new Promise(resolve => {
+        resolvers[++calls] = () => resolve(calls);
+    }));
+    const useData = asyncHookFactory(mockAsyncFn);
+    const {result: hook} = renderHook(() => useData());
+    expect(hook.current.loading).toBe(true);
+    act(() => {
+        // not waiting bc will be resolved after the second resolver
+        hook.current.retry();
+    });
+    act(() => resolvers[2]());
+    await vi.waitFor(() => expect(hook.current.loading).toBe(false));
+    expect(hook.current.result).toBe(2);
+    act(() => resolvers[1]());
+    await vi.waitFor(() => {
+    });
+    expect(hook.current.result).toBe(2);
+});
