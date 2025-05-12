@@ -77,20 +77,18 @@ test('sync error', async () => {
 test('second request finished before first', async () => {
     let resolvers = {};
     let calls = 0;
-    const mockAsyncFn = vi.fn(() => new Promise(resolve => {
-        resolvers[++calls] = () => resolve(calls);
+    const mockAsyncFn = vi.fn((requestParam: string) => new Promise(resolve => {
+        resolvers[++calls] = (resolverNum: number) => resolve(resolverNum);
     }));
-    const useData = asyncHookFactory(mockAsyncFn);
-    const {result: hook} = renderHook(() => useData());
+    const useData = asyncHookFactory((requestParam: string) => mockAsyncFn(requestParam));
+    const {result: hook, rerender} = renderHook((p: string) => useData(p),
+        {initialProps: 'firstValue',});
     expect(hook.current.loading).toBe(true);
-    act(() => {
-        // not waiting bc will be resolved after the second resolver
-        hook.current.retry();
-    });
-    act(() => resolvers[2]());
+    rerender('newValue');
+    act(() => resolvers[2](2));
     await vi.waitFor(() => expect(hook.current.loading).toBe(false));
     expect(hook.current.result).toBe(2);
-    act(() => resolvers[1]());
+    act(() => resolvers[1](1));
     await vi.waitFor(() => {
     });
     expect(hook.current.result).toBe(2);
