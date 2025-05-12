@@ -1,6 +1,6 @@
 import {useCallback, useEffect, useRef, useState} from 'react';
 
-export function asyncHookFactory<Result, Params extends ParamsType>(asyncFunction: (...params: Params) => Promise<Result>) {
+export function asyncHookFactory<Result, Params extends ValuesToStringify>(asyncFunction: (...params: Params) => Promise<Result>) {
     const resultListeners: Record<string, ((result: Result) => void)[]> = {};
 
     return (...params: Params) => {
@@ -59,12 +59,12 @@ export function asyncHookFactory<Result, Params extends ParamsType>(asyncFunctio
     };
 }
 
-type CacheOptions<Params extends ParamsType> = {
+type CacheOptions<Params extends ValuesToStringify> = {
     seconds: number,
     customKey?: (...params: Params) => string,
 }
 
-export function cacheFunction<Result, Params extends ParamsType>(asyncFunction: (...params: Params) => Promise<Result>, options: CacheOptions<Params>) {
+export function cacheFunction<Result, Params extends ValuesToStringify>(asyncFunction: (...params: Params) => Promise<Result>, options: CacheOptions<Params>) {
     let cachedResults: { [key: string]: { result: Result, expires: number } } = {};
     let cachedPromises: { [key: string]: Promise<Result> } = {};
     return async (...params: Params): Promise<Result> => {
@@ -94,10 +94,9 @@ export function cacheFunction<Result, Params extends ParamsType>(asyncFunction: 
 }
 
 type JsonPrimitive = string | number | boolean | null;
-type JsonObject = { [key: string]: ValueToStringify; }
+type JsonObject = { [key: string]: ValuesToStringify; }
 
-interface JsonArray extends Array<ValueToStringify> {
+interface JsonArray extends Array<ValuesToStringify> {
 }
 
-type ValueToStringify = JsonPrimitive | JsonObject | JsonArray;
-type ParamsType = ValueToStringify[];
+type ValuesToStringify = (JsonPrimitive | JsonObject | JsonArray)[];
